@@ -98,7 +98,7 @@ def train_model(strategy, device):
                 #what do we do when it is done?
                 break
     #save model after training
-    torch.save(policy_net.state_dict(), f'weights/{strategy}.pth')
+    torch.save(policy_net.state_dict(), f'models/{strategy}.pth')
     print('Complete')
 
 if __name__ == "__main__":
