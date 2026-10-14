@@ -17,7 +17,13 @@ from utilities import select_action, optimize_model, ReplayMemory
 from test_script import QNetwork
 from itertools import count
 
-def train_model(strategy):
+device = torch.device(
+    "cuda" if torch.cuda.is_available() else
+    "mps" if torch.backends.mps.is_available() else
+    "cpu"
+)
+
+def train_model(strategy, device):
     env = gym.make('CartPole-v1')
 
     #training hyperparameters
@@ -37,7 +43,7 @@ def train_model(strategy):
     target_net = QNetwork(n_observations, n_actions).to(device)
     target_net.load_state_dict(policy_net.state_dict())
 
-    optimizer = optim.AdamW(policy_net.parameters(), lr=LR, amsgrad=True)
+    optimizer = optim.AdamW(policy_net.parameters(), lr=lr, amsgrad=True)
     memory = ReplayMemory(10000)
 
 
@@ -61,7 +67,7 @@ def train_model(strategy):
         state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
 
         for t in count():
-            action = select_action(state)
+            action = select_action(state, epsilon)
             observation, reward, terminated, truncated, _ = env.step(action.item())
             reward = torch.tensor([reward], device=device)
             done = terminated or truncated
@@ -93,3 +99,6 @@ def train_model(strategy):
                 break
 
     print('Complete')
+
+if __name__ == "__main__":
+    train_model("baseline", device)
