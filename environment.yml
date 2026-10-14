@@ -1,0 +1,14 @@
+name: RL_3_Group8
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - numpy==1.23.5
+      - gym==0.26.2
+      - pygame==2.1.0
+      - torch
+      - matplotlib
+      - pandas
