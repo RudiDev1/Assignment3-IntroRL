@@ -22,7 +22,11 @@ device = torch.device(
     "mps" if torch.backends.mps.is_available() else
     "cpu"
 )
-
+hyperparams = {
+    "baseline": [0.8],
+    "decay_per_episode": [0.8, 0.0001, 0.5],
+    "decay_reset_each_change": [0.8, 0.0001, 0.5]
+}
 def train_model(strategy, device):
     env = gym.make('CartPole-v1')
 
@@ -46,7 +50,8 @@ def train_model(strategy, device):
     optimizer = optim.AdamW(policy_net.parameters(), lr=lr, amsgrad=True)
     memory = ReplayMemory(10000)
 
-
+    #set previous pole length
+    prev_pole_len = 0
     for i_episode in range(num_episodes):
         pole_length = np.random.uniform(0.4, 1.8)
         env.unwrapped.length = pole_length
@@ -54,14 +59,25 @@ def train_model(strategy, device):
         #set epsilon based on 3 independent methods
         if strategy == "baseline":
             #baseline
-            epsilon = 0.5
-        elif strategy == "VDBE-Boltzmann":
-            #VDBE-Boltzmann
-            epsilon = 0.5
-        elif strategy == "third":
-            #pole-length based
-            epsilon = 0.5
+            epsilon = hyperparams[strategy][0]
+        elif strategy == "decay_per_episode" and i_episode == 0:
+            epsilon = hyperparams[strategy][0]
+            epsilon_decay = hyperparams[strategy][1]
+            epsilon_low = hyperparams[strategy][2]
 
+        elif strategy == "decay_reset_each_change" and prev_pole_len == 0:
+            epsilon = hyperparams[strategy][0]
+            epsilon_decay = hyperparams[strategy][1]
+            epsilon_low = hyperparams[strategy][2]
+        if i_episode > 0 and strategy == "decay_per_episode":
+            if epsilon != epsilon_low:
+                epsilon = epsilon - epsilon_decay
+        if prev_pole_len != 0 and prev_pole_len != pole_length and strategy == "decay_reset_each_change":
+            print("pole length changed resetting...")
+            epsilon = hyperparams[strategy][0]
+        elif strategy == "decay_reset_each_change" and prev_pole_len == pole_length: 
+            if epsilon != epsilon_low:
+                epsilon = epsilon - epsilon_decay
         # Initialize the environment and get its state
         state, info = env.reset()
         state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
@@ -97,9 +113,12 @@ def train_model(strategy, device):
             if done:
                 #what do we do when it is done?
                 break
+        prev_pole_len = pole_length
     #save model after training
     torch.save(policy_net.state_dict(), f'weights/{strategy}.pth')
     print('Complete')
 
 if __name__ == "__main__":
     train_model("baseline", device)
+    train_model("decay_per_episode", device)
+    train_model("decay_reset_each_change", device)
