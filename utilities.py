@@ -25,7 +25,7 @@ class ReplayMemory(object):
     def __len__(self):
         return len(self.memory)
     
-def select_action(state, epsilon):
+def select_action(state, epsilon, policy_net, env, device):
     sample = random.random()
     if sample > epsilon:
         with torch.no_grad():
@@ -36,7 +36,7 @@ def select_action(state, epsilon):
     else:
         return torch.tensor([[env.action_space.sample()]], device=device, dtype=torch.long)
     
-def optimize_model():
+def optimize_model(device, memory, policy_net, target_net, optimizer, GAMMA, BATCH_SIZE):
     if len(memory) < BATCH_SIZE:
         return
     transitions = memory.sample(BATCH_SIZE)

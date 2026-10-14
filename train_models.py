@@ -67,7 +67,7 @@ def train_model(strategy, device):
         state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
 
         for t in count():
-            action = select_action(state, epsilon)
+            action = select_action(state, epsilon, policy_net, env, device)
             observation, reward, terminated, truncated, _ = env.step(action.item())
             reward = torch.tensor([reward], device=device)
             done = terminated or truncated
@@ -84,7 +84,7 @@ def train_model(strategy, device):
             state = next_state
 
             # Perform one step of the optimization (on the policy network)
-            optimize_model()
+            optimize_model(device, memory, policy_net, target_net, optimizer, gamma, batch_size)
 
             # Soft update of the target network's weights
             # θ′ ← τ θ + (1 −τ )θ′
