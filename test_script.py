@@ -91,7 +91,7 @@ def test_script():
     all_results = []
 
     # import here your trained neural network
-    trained_nn = 'baseline.pth'
+    trained_nn = 'action_gap0.1.pth'
 
     results = {}
     total_score = 0

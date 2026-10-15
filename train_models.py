@@ -27,7 +27,7 @@ hyperparams = {
     "decay_per_episode": [0.8, 0.0001, 0.5],
     "decay_reset_each_change": [0.8, 0.0001, 0.5]
 }
-def train_model(strategy, device):
+def train_model(strategy, device=device):
     env = gym.make('CartPole-v1')
 
     #training hyperparameters
@@ -78,12 +78,30 @@ def train_model(strategy, device):
         elif strategy == "decay_reset_each_change" and prev_pole_len == pole_length: 
             if epsilon != epsilon_low:
                 epsilon = epsilon - epsilon_decay
+
         # Initialize the environment and get its state
         state, info = env.reset()
         state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
 
         for t in count():
-            action = select_action(state, epsilon, policy_net, env, device)
+            if strategy == "action_gap":
+                with torch.no_grad():
+                    qs = policy_net(state)
+                    sorted_q, _ = torch.sort(qs, descending=True)
+                    best_q = sorted_q[0][0]
+                    second_best_q = sorted_q[0][1]
+                    action_gap = (best_q - second_best_q).item()
+
+                    limit = 0.1
+                    
+                    if action_gap < limit:
+                        action = torch.tensor([[env.action_space.sample()]], device=device, dtype=torch.long)
+                    else:
+                        action = qs.max(1)[1].view(1, 1)
+
+            else:
+                action = select_action(state, epsilon, policy_net, env, device)
+
             observation, reward, terminated, truncated, _ = env.step(action.item())
             reward = torch.tensor([reward], device=device)
             done = terminated or truncated
@@ -115,10 +133,11 @@ def train_model(strategy, device):
                 break
         prev_pole_len = pole_length
     #save model after training
-    torch.save(policy_net.state_dict(), f'weights/{strategy}.pth')
+    torch.save(policy_net.state_dict(), f'weights/{strategy}0.1.pth')
     print('Complete')
 
 if __name__ == "__main__":
-    train_model("baseline", device)
-    train_model("decay_per_episode", device)
-    train_model("decay_reset_each_change", device)
+    #train_model("baseline", device)
+    #train_model("decay_per_episode", device)
+    #train_model("decay_reset_each_change", device)
+    train_model("action_gap")
