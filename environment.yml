@@ -1,3 +1,4 @@
+#If anything is added later use "conda env update -f environment.yml --prune" to change to updated one#
 name: RL_3_Group8
 channels:
   - conda-forge
@@ -12,3 +13,4 @@ dependencies:
       - torch
       - matplotlib
       - pandas
+      - openpyxl

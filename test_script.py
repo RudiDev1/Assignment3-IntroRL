@@ -24,7 +24,7 @@ class QNetwork(nn.Module):
         return self.fc3(x)
 
 
-def bar_plot(results):
+def bar_plot(results, strategy):
     data = results[0]
 
     avgs = {k: v for k, v in data.items() if k.startswith('Avg_')}
@@ -44,7 +44,7 @@ def bar_plot(results):
     plt.ylabel('Episode length')
     plt.title(f'Average score over all pole lengths = {round(overall_avg, 0)}')
 
-    plt.savefig("bar_plot.png")
+    plt.savefig(f"bar_plot{strategy}.png")
     plt.show()
 
 
@@ -82,7 +82,7 @@ def test_pole_length(env, q_network):
 
 
 
-def test_script():
+def test_script(path):
     """
     Function that simulates the trained NN over 30 different pole lengths, 10 times per length.
     """
@@ -91,7 +91,7 @@ def test_script():
     all_results = []
 
     # import here your trained neural network
-    trained_nn = 'action_gap0.1.pth'
+    trained_nn = path
 
     results = {}
     total_score = 0
@@ -127,11 +127,29 @@ def test_script():
     results["Total"] = total_score  # Store just the mean
     all_results.append(results)
 
-    bar_plot(all_results)
+    bar_plot(all_results, path)
 
     # Convert list to DataFrame
     df = pd.DataFrame(all_results)
-    df.to_excel("experiment_results.xlsx", index=False)
+    df.to_excel(f"experiment_results_{path}.xlsx", index=False)
 
 if __name__ == "__main__":
-    test_script()
+    print("###########################")
+    print("fix => Fixed exploration strategy")
+    print("dpe => decay per episode")
+    print("agp => action gap exploration strategy")
+    print("###########################")
+    while True:
+        input_strategy = input("What strategy would you like to to test? fix/dpe/agp only ")
+        if input_strategy == "fix":
+            test_script("fixed.pth")
+            break
+        elif input_strategy == "dpe":
+            test_script("decay_per_episode.pth")
+            break
+        elif input_strategy == "agp":
+            test_script("action_gap.pth")
+            break
+        else:
+            print("Please write either fix, dpe, or agp")
+        
