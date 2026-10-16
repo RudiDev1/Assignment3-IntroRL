@@ -9,8 +9,8 @@ conda activate RL_3_Group8
 ```
 ### Running
 ```Bash
-python main.py train    # trains the 3 strategies and saves them to weights
-python main.py test     # runs test_script.py on all 3 strategies
-python main.py compare  # combined bar plot + significance tests
-python main.py          # all of the above
+python train_models.py  # trains the 3 strategies and saves them to weights/
+python main.py          # runs test_script.py on all 3 strategies + combined bar plot + significance tests
+python main.py test     # only the testing part
+python main.py compare  # only the comparison part (needs the xlsx files from the test)
 ```

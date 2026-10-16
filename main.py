@@ -3,24 +3,19 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import stats
-from train_models import train_model
 from test_script import test_script
 
 strategies = ["fixed", "decay_per_episode", "action_gap"]
 
 
-def train_all():
-    for strategy in strategies:
-        print("training", strategy)
-        train_model(strategy)
-
-
+# runs the provided test script for every strategy (makes the bar plots + xlsx files)
 def test_all():
     for strategy in strategies:
         print("testing", strategy)
         test_script(strategy + ".pth")
 
 
+# reads the xlsx file from the test script and returns the pole lengths, means and stds
 def load_results(strategy):
     df = pd.read_excel(f"experiment_results_{strategy}.pth.xlsx")
     avg_cols = [c for c in df.columns if c.startswith("Avg_")]
@@ -31,11 +26,13 @@ def load_results(strategy):
     return lengths, avgs, stds
 
 
+# combined bar plot of all strategies + summary + significance tests
 def compare():
     results = {}
     for strategy in strategies:
         results[strategy] = load_results(strategy)
 
+    # grouped bar plot with one bar per strategy next to each other for every pole length
     x = np.arange(len(results["fixed"][0]))
     width = 0.27
     plt.figure(figsize=(12, 5))
@@ -52,6 +49,7 @@ def compare():
     plt.savefig("comparison.png")
     plt.show()
 
+    # mean over the 30 pole lengths
     print()
     print("summary")
     for strategy in strategies:
@@ -60,6 +58,7 @@ def compare():
               f"min = {np.min(avgs):.1f} (length {lengths[np.argmin(avgs)]}), "
               f"max = {np.max(avgs):.1f} (length {lengths[np.argmax(avgs)]})")
 
+    # paired because every strategy was tested on the same 30 pole lengths
     print()
     print("paired t-test over the 30 pole lengths")
     for i in range(len(strategies)):
@@ -72,12 +71,11 @@ def compare():
 
 
 if __name__ == "__main__":
+    # python main.py [test|compare|all], all is the default
     mode = sys.argv[1] if len(sys.argv) > 1 else "all"
-    if mode not in ["train", "test", "compare", "all"]:
-        print("usage: python main.py [train|test|compare|all]")
+    if mode not in ["test", "compare", "all"]:
+        print("usage: python main.py [test|compare|all]")
         sys.exit()
-    if mode in ["train", "all"]:
-        train_all()
     if mode in ["test", "all"]:
         test_all()
     if mode in ["compare", "all"]:
